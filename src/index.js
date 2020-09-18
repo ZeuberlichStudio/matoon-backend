@@ -9,4 +9,5 @@ app.use(bodyParser.json());
 app.use('/products', require('./routes/products'));
 app.use('/dev', require('./routes/dev'));
 
-const server = app.listen(process.env.port || 3001, () => console.log(`app is running on port ${server.address().port}`));
+const port = process.env.PORT || 3001;
+const server = app.listen(port, () => console.log(`app is running on port ${server.address().port}`));
