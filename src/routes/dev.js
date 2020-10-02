@@ -45,6 +45,8 @@ router.post('/products/update', (req, res) => {
             if (err) res.send(err);
         });
     };
+
+    res.send('updated');
 });
 
 router.post('/products/remove', (req, res) => {
