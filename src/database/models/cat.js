@@ -7,7 +7,6 @@ const catSchema = new Schema({
         unique: true
     },
     parent: String,
-    ancestors: [String],
     posts: [{
         title: String,
         content: String,
@@ -17,7 +16,15 @@ const catSchema = new Schema({
     }]
 },
 {
-    timestamps: false
+    timestamps: false,
+    toJSON: { virtuals: true }
+});
+
+catSchema.virtual('ancestors', {
+    ref: 'Cat',
+    localField: 'ancestors',
+    foreignField: 'slug',
+    justOne: false
 });
 
 const Cat = model('Cat', catSchema, 'categories');

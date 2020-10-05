@@ -4,113 +4,272 @@ import Product from '../database/models/product';
 import Color from '../database/models/color';
 
 router.get('/', (req, res) => {
-    const where = req.query.name && {
-        name: req.query.name.slice(","),
+
+    const {
+        cat,
+        sort: reqSort,
+        color: reqColor,
+        brand: reqBrand,
+        material: reqMaterial,
+        sex: reqSex,
+        minPrice,
+        maxPrice,
+        minStock,
+    } = req.query;
+
+    //sorting
+    const sortField = reqSort && reqSort.split(',')[0];
+    const sortDir = reqSort && reqSort.split(',')[1];
+
+    //attributes
+    const colors = reqColor && reqColor.split(',');
+    const brands = reqBrand && reqBrand.split(',');
+    const materials = reqMaterial && reqMaterial.split(',');
+    const sex = reqSex && reqSex.split(',');
+
+    //match stage
+    let match = {};
+
+    if ( colors ) {
+        match['attributes.colors'] = { $in: colors };
+    }
+    if ( brands ) {
+        match['attributes.brands'] = { $in: brands };
+    }
+    if ( materials ) {
+        match['materials'] = { $in: materials };
+    }
+    if ( sex ) {
+        match['for'] = { $in: sex };
     }
 
-    const sort = req.query.sort && { [req.query.sort.split(",")[0]]: req.query.sort.split(",")[1] };
+    if ( minPrice && maxPrice ) {
+        match['price'] = { $gte: parseInt(minPrice), $lte: parseInt(maxPrice) };
+    }
+    else if ( minPrice && !maxPrice ) {
+        match['price'] = { $gte: parseInt(minPrice) };
+    }
+    else if ( !minPrice && maxPrice ) {
+        match['price'] = { $lte: parseInt(maxPrice) };
+    }
 
-    Product.aggregate([
-            {
-                $lookup: {
-                    from: Color.collection.name,
-                    localField: 'attributes.colors',
-                    foreignField: 'name',
-                    as: 'attributes.colors'
-                }
-            },
-            {
-                $sort: sort || {
-                    'meta.createdAt': -1
-                }
-            }
-        ])
-        .then( data => res.send(data) )
-        .catch( err => res.send(err) );
-});
+    if ( minStock ) {
+        match['meta.stock'] = { $gte: parseInt(minStock) };
+    }
 
-router.get('/:cat_slug', (req, res) => {
-    const cat_slug = req.params.cat_slug;
+    if ( cat ) {
+        match['$or'] = [
+            { 'categories.slug': cat },
+            { 'categories.ancestors': { $in: [cat] } }
+        ];
+    }
 
-    const result = Product.aggregate([
-        {
+    //sort stage
+    let sort = null;
+
+    if ( sortField ) {
+        sort = {
+            [sortField]: sortDir ? parseInt(sortDir) : 1
+        };
+    }
+
+    //pipeline
+    let pipeline = [];
+
+    if ( cat ) {
+        pipeline.push({
             $lookup: {
                 from: 'categories',
                 localField: 'categories',
                 foreignField: 'slug',
                 as: 'categories'
             }
-        },
-        {
-            $unwind: {
-                path: '$categories'
-            }
-        },
-        {
-            $match: {
-                $or: [
-                    { 'categories.slug': cat_slug },
-                    { 'categories.ancestors': { $in: [cat_slug] } }
-                ] 
-            }
-        },
-        {
-            $project: {
-                categories: 0
-            }
-        },
-        {
-            $group: {
-                _id: '_id',
-                rows: {$addToSet: '$$ROOT' }
-            }
-        }
-    ])
+        });
+    }
 
-    result
-        .then( (data) => res.send(data[0].rows) )
+    pipeline.push({
+        $match: match
+    });
+
+    pipeline.push({
+        $lookup: {
+            from: 'colors',
+            localField: 'attributes.colors',
+            foreignField: 'name',
+            as: 'attributes.colors'
+        }
+    });
+
+    pipeline.push({
+        $project: {
+            'categories': 0
+        }
+    });
+
+    if ( sort ) {
+        pipeline.push({
+            $sort: sort
+        });
+    }
+
+    console.log(pipeline);
+
+    //quering db
+    const products = Product.aggregate(pipeline);
+
+
+    products
+        .then( data => res.send(data) )
         .catch( err => res.send(err) );
 });
 
 router.get('/available-filters', (req, res) => {
-    const filterIds = 
-    Product.aggregate([
-        {
-            $unwind: '$attributes'
-        },
-        {
-            $unwind: '$attributes.colors'
-        },
-        {
-            $unwind: '$attributes.brands'
-        },
-        { 
-            $group: {
-                _id: 0,
-               colors: {$addToSet: '$attributes.colors'},
-               brands: {$addToSet: {
-                   "name": '$attributes.brands'
-               }}
-            }
-        },
-        {
+
+    const {
+        cat,
+        minPrice,
+        maxPrice,
+        minStock
+    } = req.query;
+
+    //match
+
+    let match = {};
+
+    if ( cat ) {
+        match['$or'] = [
+            { 'categories.slug': cat },
+            { 'categories.ancestors': { $in: [cat] } }
+        ];
+    }
+
+    if ( minPrice && maxPrice ) {
+        match['price'] = { $gte: parseInt(minPrice), $lte: parseInt(maxPrice) };
+    }
+    else if ( minPrice && !maxPrice ) {
+        match['price'] = { $gte: parseInt(minPrice) };
+    }
+    else if ( !minPrice && maxPrice ) {
+        match['price'] = { $lte: parseInt(maxPrice) };
+    }
+
+    if ( minStock ) {
+        match['meta.stock'] = { $gte: parseInt(minStock) };
+    }
+
+    //pipeline
+
+    let pipeline = [];
+
+    if ( cat ) {
+        pipeline.push({
             $lookup: {
-                from: Color.collection.name,
-                localField: 'colors',
-                foreignField: 'name',
-                as: 'colors'
+                from: 'categories',
+                localField: 'categories',
+                foreignField: 'slug',
+                as: 'categories'
             }
-        },
-        {   
-            $project: {
-                "_id": 0
+        });
+    }
+
+    pipeline.push({
+        $match: match
+    });
+
+    pipeline.push({
+        $project: {
+            _id: 0,
+            for: 1,
+            materials: 1,
+            colors: '$attributes.colors',
+            brands: '$attributes.brands'
+        }
+    });
+
+    pipeline.push({
+        $unwind: {
+            path: '$for',
+            preserveNullAndEmptyArrays: true
+        }
+    });
+
+    pipeline.push({
+        $unwind: {
+            path: '$materials',
+            preserveNullAndEmptyArrays: true
+        }
+    });
+
+    pipeline.push({
+        $unwind: {
+            path: '$colors'
+        }
+    });
+
+    pipeline.push({
+        $unwind: {
+            path: '$brands'
+        }
+    });
+
+    pipeline.push({
+        $group: {
+            _id: 'filters',
+            sex: { 
+                $addToSet: {
+                    $cond: [
+                        { $ne: [{ name: '$for'}, {}] },
+                        { name: '$for'},
+                        '$$REMOVE'
+                    ]
+                }
+            },
+            material: { 
+                $addToSet: {
+                    $cond: [
+                        { $ne: [{ name: '$materials'}, {}] },
+                        { name: '$materials'},
+                        '$$REMOVE'
+                    ]
+                }
+            },
+            color: { $addToSet: '$colors' },
+            brand: { 
+                $addToSet: {
+                    $cond: [
+                        { $ne: [{ name: '$brands'}, {}] },
+                        { name: '$brands'},
+                        '$$REMOVE'
+                    ]
+                }
             }
         }
-    ]);
+    });
 
-    filterIds
+    pipeline.push({
+        $lookup: {
+            from: 'colors',
+            localField: 'color',
+            foreignField: 'name',
+            as: 'color'
+        }
+    });
+
+    pipeline.push({
+        $project: {  
+            _id: 0, 
+            'color.__v': 0,
+            'color._id': 0
+        }
+    });
+
+    console.log(pipeline)
+
+    const filters = Product.aggregate(pipeline);
+
+    filters
         .then( data => res.send(data[0]) )
-        .catch( err => res.send(err) )
+        .catch( err => res.send(err) );
 });
 
 module.exports = router;
