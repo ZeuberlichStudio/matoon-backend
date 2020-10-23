@@ -123,6 +123,32 @@ router.get('/', (req, res) => {
         .catch( err => res.send(err) );
 });
 
+router.get('/slug=:slug', (req, res) => {
+    const { slug } = req.params;
+
+    const pipeline = [
+        {
+            $match: {
+                slug: { $eq: slug }
+            }
+        },
+        {
+            $lookup: {
+                from: 'colors',
+                localField: 'attributes.colors',
+                foreignField: 'name',
+                as: 'attributes.colors'
+            }
+        }
+    ];
+
+    const product = Product.aggregate(pipeline);
+
+    product
+        .then( data => res.send(data) )
+        .catch( err => res.send(err) );
+});
+
 router.get('/available-filters', (req, res) => {
 
     const {
@@ -187,59 +213,43 @@ router.get('/available-filters', (req, res) => {
     });
 
     pipeline.push({
+        $lookup: {
+            from: 'colors',
+            localField: 'colors',
+            foreignField: 'name',
+            as: 'colors'
+        }
+    });
+
+    pipeline.push({
+        $project: {
+            'o': { $objectToArray: '$$ROOT' }
+        }
+    });
+
+    pipeline.push({
         $unwind: {
-            path: '$for',
+            path: '$o',
             preserveNullAndEmptyArrays: true
         }
     });
 
     pipeline.push({
         $unwind: {
-            path: '$materials',
+            path: '$o.v',
             preserveNullAndEmptyArrays: true
-        }
-    });
-
-    pipeline.push({
-        $unwind: {
-            path: '$colors'
-        }
-    });
-
-    pipeline.push({
-        $unwind: {
-            path: '$brands'
         }
     });
 
     pipeline.push({
         $group: {
-            _id: 'filters',
-            sex: { 
+            _id: '$o.k',
+            rows: { 
                 $addToSet: {
                     $cond: [
-                        { $ne: [{ name: '$for'}, {}] },
-                        { name: '$for'},
-                        '$$REMOVE'
-                    ]
-                }
-            },
-            material: { 
-                $addToSet: {
-                    $cond: [
-                        { $ne: [{ name: '$materials'}, {}] },
-                        { name: '$materials'},
-                        '$$REMOVE'
-                    ]
-                }
-            },
-            color: { $addToSet: '$colors' },
-            brand: { 
-                $addToSet: {
-                    $cond: [
-                        { $ne: [{ name: '$brands'}, {}] },
-                        { name: '$brands'},
-                        '$$REMOVE'
+                        { $ifNull: ['$o.v.name', false] },
+                        '$o.v',
+                        { name: '$o.v' }
                     ]
                 }
             }
@@ -247,17 +257,74 @@ router.get('/available-filters', (req, res) => {
     });
 
     pipeline.push({
-        $lookup: {
-            from: 'colors',
-            localField: 'color',
-            foreignField: 'name',
-            as: 'color'
+        $unwind: {
+            path: '$rows',
+        }
+    });
+
+    pipeline.push({
+        $sort: {
+            'rows.name': 1,
+        }
+    });
+
+    // pipeline.push({
+    //     $group: {
+    //         _id: {
+    //             $cond: [
+    //                 { $eq: ['$_id', 'for'] },
+    //                 'sex',
+    //                 '$_id'
+    //             ],
+    //         },
+    //         rows: { $push: '$rows' }
+    //     }
+    // });
+    
+    pipeline.push({
+        $group: {
+            _id: 'available_filters',
+            sex: {
+                $push: {
+                    $cond: [
+                        { $eq: ['$_id', 'for'] },
+                        '$rows',
+                        '$$REMOVE'
+                    ],
+                }
+            },
+            colors: {
+                $push: {
+                    $cond: [
+                        { $eq: ['$_id', 'colors'] },
+                        '$rows',
+                        '$$REMOVE'
+                    ],
+                }
+            },
+            materials: {
+                $push: {
+                    $cond: [
+                        { $eq: ['$_id', 'materials'] },
+                        '$rows',
+                        '$$REMOVE'
+                    ],
+                }
+            },
+            brands: {
+                $push: {
+                    $cond: [
+                        { $eq: ['$_id', 'brands'] },
+                        '$rows',
+                        '$$REMOVE'
+                    ],
+                }
+            },
         }
     });
 
     pipeline.push({
         $project: {  
-            _id: 0, 
             'color.__v': 0,
             'color._id': 0
         }
