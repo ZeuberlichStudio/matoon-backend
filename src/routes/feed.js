@@ -9,4 +9,14 @@ router.get('/', (req, res) => {
         .catch( err => res.send(err) );
 });
 
+router.get('/slug=:slug', (req, res) => {
+    const { slug } = req.params;
+
+    const fetchPosts = Post.find({ slug: slug });
+
+    fetchPosts
+        .then( data => res.send(data) )
+        .catch( err => res.send(err) );
+});
+
 module.exports = router;
