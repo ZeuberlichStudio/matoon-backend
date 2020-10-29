@@ -3,6 +3,12 @@ const router = require('express').Router();
 import Cat from '../database/models/cat';
 
 router.get('/', (req, res) => {
+    Cat.find({})
+        .then( data => res.send(data) )
+        .catch( err => res.send(err) );
+});
+
+router.get('/tree', (req, res) => {
     const pipeline = [
         {
             $match: { parent: { $exists: true } }
@@ -14,6 +20,11 @@ router.get('/', (req, res) => {
             }
         },
         {
+            $sort: {
+                'name': 1
+            }
+        },
+        {
             $group: {
                 _id: '$parent',
                 children: { $push: '$$ROOT' }
@@ -45,39 +56,46 @@ router.get('/', (req, res) => {
             }
         },
         {
-            $group: {
-                _id: '$parent',
-                children: { $push: '$$ROOT' }
-            }
-        },
-        {
-            $match: { _id: { $ne: null } }
-        },
-        {
-            $lookup: {
-                from: 'categories',
-                localField: '_id',
-                foreignField: 'slug',
-                as: '_id'
-            }
-        },
-        {
-            $unwind: {
-                path: '$_id'
-            }
-        },
-        {
-            $project: {
-                name: '$_id.name',
-                slug: '$_id.slug',
-                name: '$_id.name',
-                parent: '$_id.parent',
-                ancestors: '$_id.ancestors',
-                _id: 0,
-                children: '$children',
-
+            $sort: {
+                name: 1
             }
         }
+
+        //dev
+        // {
+        //     $group: {
+        //         _id: '$parent',
+        //         children: { $push: '$$ROOT' }
+        //     }
+        // },
+        // {
+        //     $match: { _id: { $ne: null } }
+        // },
+        // {
+        //     $lookup: {
+        //         from: 'categories',
+        //         localField: '_id',
+        //         foreignField: 'slug',
+        //         as: '_id'
+        //     }
+        // },
+        // {
+        //     $unwind: {
+        //         path: '$_id'
+        //     }
+        // },
+        // {
+        //     $project: {
+        //         name: '$_id.name',
+        //         slug: '$_id.slug',
+        //         name: '$_id.name',
+        //         parent: '$_id.parent',
+        //         ancestors: '$_id.ancestors',
+        //         _id: 0,
+        //         children: '$children',
+
+        //     }
+        // }
     ];
 
     const getCatTree = Cat.aggregate(pipeline);
