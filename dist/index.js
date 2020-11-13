@@ -15,8 +15,10 @@ require('dotenv').config();
 var app = (0, _express["default"])();
 app.use(_bodyParser["default"].json());
 app.use((0, _cors["default"])());
+
 app.use('/products', require('./routes/products'));
 app.use('/dev', require('./routes/dev'));
+
 var port = process.env.PORT || 3001;
 var server = app.listen(port, function () {
   return console.log("app is running on port ".concat(server.address().port));

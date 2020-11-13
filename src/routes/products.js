@@ -15,6 +15,8 @@ router.get('/', (req, res) => {
         minPrice,
         maxPrice,
         minStock,
+        search,
+        limit
     } = req.query;
 
     //sorting
@@ -57,12 +59,12 @@ router.get('/', (req, res) => {
         match['meta.stock'] = { $gte: parseInt(minStock) };
     }
 
-    if ( cat ) {
-        match['$or'] = [
-            { 'categories.slug': cat },
-            { 'categories.ancestors': { $in: [cat] } }
-        ];
-    }
+    // if ( cat ) {
+    //     match['$or'] = [
+    //         { 'categories.slug': cat },
+    //         { 'categories.ancestors': { $in: [cat] } }
+    //     ];
+    // }
 
     //sort stage
     let sort = null;
@@ -83,6 +85,38 @@ router.get('/', (req, res) => {
                 localField: 'categories',
                 foreignField: 'slug',
                 as: 'categories'
+            }
+        });
+
+        pipeline.push({
+            $match: {
+                $or: [
+                    { 'categories.slug': cat },
+                    { 'categories.ancestors': { $in: [cat] } }
+                ]
+            }
+        })
+    }
+
+    if ( search ) {
+        
+        const searchStrings = search.split(' ');
+        const searchRegex = new RegExp( 
+            '^' +
+            searchStrings.reduce(( acc, next ) => {
+                acc += `(?=.*\\b${next}.*\\b)`;
+                return acc;
+            }, '') +
+            '.*$', 'i'
+        );
+
+        pipeline.push({
+            $match: {
+                $or: [
+                    { name: { $regex: searchRegex } },
+                    { description: { $regex: searchRegex } },
+                    { sku: { $regex: searchRegex } }
+                ]
             }
         });
     }
@@ -110,6 +144,10 @@ router.get('/', (req, res) => {
         pipeline.push({
             $sort: sort
         });
+    }
+
+    if ( limit ) {
+        pipeline.push({ $limit: parseInt(limit) });
     }
 
     console.log(pipeline);

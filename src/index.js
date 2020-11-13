@@ -12,6 +12,9 @@ app.use('/static', express.static(__dirname + '/../public'));
 app.use('/products', require('./routes/products'));
 app.use('/categories', require('./routes/categories'));
 app.use('/feed', require('./routes/feed'));
+app.use('/search', require('./routes/search'));
+
+app.use('/dev', require('./routes/dev'));
 
 const port = process.env.PORT || 3001;
 const server = app.listen(port, () => console.log(`app is running on port ${server.address().port}`));
