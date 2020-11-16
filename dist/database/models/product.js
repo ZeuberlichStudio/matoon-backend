@@ -7,6 +7,11 @@ var productSchema = new _mongoose.Schema({
   sku: String,
   desc: String,
   price: Number,
+  prices: [{
+    minQty: Number,
+    maxQty: Number,
+    amount: Number
+  }],
   variants: [{
     name: String,
     attr: {
