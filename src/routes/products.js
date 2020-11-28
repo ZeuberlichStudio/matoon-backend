@@ -4,7 +4,6 @@ import Product from '../database/models/product';
 import Color from '../database/models/color';
 
 router.get('/', (req, res) => {
-
     const {
         cat,
         sort: reqSort,
@@ -16,7 +15,8 @@ router.get('/', (req, res) => {
         maxPrice,
         minStock,
         search,
-        limit
+        limit,
+        offset
     } = req.query;
 
     //sorting
@@ -58,13 +58,6 @@ router.get('/', (req, res) => {
     if ( minStock ) {
         match['meta.stock'] = { $gte: parseInt(minStock) };
     }
-
-    // if ( cat ) {
-    //     match['$or'] = [
-    //         { 'categories.slug': cat },
-    //         { 'categories.ancestors': { $in: [cat] } }
-    //     ];
-    // }
 
     //sort stage
     let sort = null;
@@ -146,28 +139,53 @@ router.get('/', (req, res) => {
         });
     }
 
-    if ( limit ) {
-        pipeline.push({ $limit: parseInt(limit) });
-    }
-
-    console.log(pipeline);
+    pipeline.push(
+        {
+            $facet: {
+                'count': [
+                    { $count: 'value' }
+                ],
+                'rows': [
+                    offset && {
+                        $skip: parseInt(offset)
+                    },
+                    limit && {
+                        $limit: parseInt(limit)
+                    },
+                    {
+                        $match: {}
+                    }
+                ].filter(Boolean)
+            },
+        },
+        {
+            $unwind: '$count'
+        },
+        {
+            $project: {
+                'totalMatches': '$count.value',
+                'rows': '$rows'
+            }
+        }
+    )
 
     //quering db
     const products = Product.aggregate(pipeline);
 
 
     products
-        .then( data => res.send(data) )
+        .then( data => res.send(data[0]) )
         .catch( err => res.send(err) );
 });
 
 router.get('/slug=:slug', (req, res) => {
     const { slug } = req.params;
+    const slugs = slug.split(',');
 
     const pipeline = [
         {
             $match: {
-                slug: { $eq: slug }
+                slug: { $in: slugs }
             }
         },
         {
