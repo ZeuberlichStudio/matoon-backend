@@ -122,7 +122,7 @@ router.get('/', (req, res) => {
         $lookup: {
             from: 'colors',
             localField: 'attributes.colors',
-            foreignField: 'name',
+            foreignField: 'slug',
             as: 'attributes.colors'
         }
     });
@@ -192,8 +192,16 @@ router.get('/slug=:slug', (req, res) => {
             $lookup: {
                 from: 'colors',
                 localField: 'attributes.colors',
-                foreignField: 'name',
+                foreignField: 'slug',
                 as: 'attributes.colors'
+            }
+        },
+        {
+            $lookup: {
+                from: 'brands',
+                localField: 'attributes.brands',
+                foreignField: 'slug',
+                as: 'attributes.brands'
             }
         }
     ];
@@ -272,8 +280,26 @@ router.get('/available-filters', (req, res) => {
         $lookup: {
             from: 'colors',
             localField: 'colors',
-            foreignField: 'name',
+            foreignField: 'slug',
             as: 'colors'
+        }
+    });
+
+    pipeline.push({
+        $lookup: {
+            from: 'brands',
+            localField: 'brands',
+            foreignField: 'slug',
+            as: 'brands'
+        }
+    });
+
+    pipeline.push({
+        $lookup: {
+            from: 'materials',
+            localField: 'materials',
+            foreignField: 'slug',
+            as: 'materials'
         }
     });
 
@@ -303,9 +329,22 @@ router.get('/available-filters', (req, res) => {
             rows: { 
                 $addToSet: {
                     $cond: [
-                        { $ifNull: ['$o.v.name', false] },
+                        { $ifNull: ['$o.v.slug', false] },
                         '$o.v',
-                        { name: '$o.v' }
+                        {
+                            name: {
+                                $switch: {
+                                    branches: [
+                                        { case: { $eq: ["$o.v", "male"] }, then: "Для него" },
+                                        { case: { $eq: ["$o.v", "female"] }, then: "Для нее" },
+                                        { case: { $eq: ["$o.v", "unisex"] }, then: "Унисекс" },
+                                        { case: { $eq: ["$o.v", "kids"] }, then: "Для детей" },
+                                    ],
+                                    default: "unhandled"
+                                }
+                            },
+                            slug: '$o.v'
+                        }
                     ]
                 }
             }
@@ -323,19 +362,6 @@ router.get('/available-filters', (req, res) => {
             'rows.name': 1,
         }
     });
-
-    // pipeline.push({
-    //     $group: {
-    //         _id: {
-    //             $cond: [
-    //                 { $eq: ['$_id', 'for'] },
-    //                 'sex',
-    //                 '$_id'
-    //             ],
-    //         },
-    //         rows: { $push: '$rows' }
-    //     }
-    // });
     
     pipeline.push({
         $group: {
@@ -385,8 +411,6 @@ router.get('/available-filters', (req, res) => {
             'color._id': 0
         }
     });
-
-    console.log(pipeline)
 
     const filters = Product.aggregate(pipeline);
 
