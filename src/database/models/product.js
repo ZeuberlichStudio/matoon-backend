@@ -3,23 +3,37 @@ import {Schema, model, SchemaTypes} from 'mongoose';
 const productSchema = new Schema({
     name: String,
     sku: String,
-    description: String,
-    shortDescription: String,
-    price: Number,
+    desc: String,
+    shortDesc: String,
+    images: [String],
+    categories: [String],
+    for: String,
     variants: [{
         images: [String],
         name: String,
         color: { type: String, ref: 'Color' },
-        brand: { type: String, ref: 'Brand' }
+        brand: { type: String, ref: 'Brand' },
+        stock: Number
     }],
-    specs: SchemaTypes.Mixed,
     attributes: {
         colors: [{ type: String, ref: 'Color' }],
-        brands: [String],
-        sizes: [String]
+        brands: [{ type: String, ref: 'Color' }]
     },
+    specs: SchemaTypes.Mixed,
+    materials: [String],
+    measurments: {
+        width: '',
+        length: '',
+        height: '',
+        weight: '' 
+    },
+    prices: [{
+        minQty: Number,
+        maxQty: Number,
+        amount: Number,
+    }],
+    suggested: [String],
     meta: {
-        stock: Number,
         orders: Number,
         createdAt: Date,
         updatedAt: Date

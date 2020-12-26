@@ -16,8 +16,7 @@ router.get( '/', ( req, res ) => {
         search,
         limit,
         offset,
-        attrMap = 'true',
-        exc
+        attrMap = 'true'
     } = req.query;
 
     //sorting
@@ -31,7 +30,24 @@ router.get( '/', ( req, res ) => {
     const sex = reqSex && reqSex.split(',');
 
     //match stage
-    let match = {};
+    let match = {
+        variants: { $elemMatch: 
+            {
+                "images": [
+                  "products/27d.jpg"
+                ],
+                "sku": "098W-RG",
+                "_id": "5fe3c9b3f61d8110c4e9a9ff",
+                "color": "red",
+                "brand": {
+                  "_id": "5fd809eac0e574333c12852d",
+                  "name": "Gucci",
+                  "slug": "gucci"
+                },
+                "stock": "1158"
+            }
+        }
+    };
 
     if ( colors ) {
         match['attributes.colors'] = { $in: colors };
@@ -44,9 +60,6 @@ router.get( '/', ( req, res ) => {
     }
     if ( sex ) {
         match['for'] = { $in: sex };
-    }
-    if ( exc ) {
-        match['sku'] = { $ne: exc }; 
     }
 
     if ( minPrice && maxPrice ) {
@@ -202,10 +215,10 @@ router.get( '/', ( req, res ) => {
                 },
             }
         });
-    
+
         pipeline.push({
             $replaceRoot: {
-                newRoot: { $mergeObjects: ['$_id.PRODUCT', {variants: '$variants', attributeMap: { $arrayToObject: '$attributeMap' }}] }
+                newRoot: { $mergeObjects: ['$_id.PRODUCT', {variants: '$variants', attributeMap: {$arrayToObject: '$attributeMap'}}] }
             }
         });
     } else {
@@ -255,14 +268,11 @@ router.get( '/', ( req, res ) => {
             },
         },
         {
-            $unwind: {
-                path: '$count',
-                preserveNullAndEmptyArrays: true
-            },
+            $unwind: '$count'
         },
         {
             $project: {
-                'totalMatches': { $ifNull: ['$count.value', 0] },
+                'totalMatches': '$count.value',
                 'rows': '$rows'
             }
         }
@@ -356,7 +366,7 @@ router.get('/slug=:slug', (req, res) => {
 
     pipeline.push({
         $unwind: { path: '$_id.COLOR' }
-    });
+    })
 
     pipeline.push({
         $unwind: { path: '$variants' }
