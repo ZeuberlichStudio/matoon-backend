@@ -50,18 +50,19 @@ router.get( '/', ( req, res ) => {
     }
 
     if ( minPrice && maxPrice ) {
-        match['price'] = { $gte: parseInt(minPrice), $lte: parseInt(maxPrice) };
+        match['prices.0.amount'] = { $gte: parseInt(minPrice), $lte: parseInt(maxPrice) };
     }
     else if ( minPrice && !maxPrice ) {
-        match['price'] = { $gte: parseInt(minPrice) };
+        match['prices.0.amount'] = { $gte: parseInt(minPrice) };
     }
     else if ( !minPrice && maxPrice ) {
-        match['price'] = { $lte: parseInt(maxPrice) };
+        match['prices.0.amount'] = { $lte: parseInt(maxPrice) };
     }
 
     if ( minStock ) {
-        match['meta.stock'] = { $gte: parseInt(minStock) };
+        match['variants'] = { $elemMatch: { stock: { $gte: parseInt(minStock) } }};
     }
+    
 
     //sort stage
     let sort = null;
@@ -103,17 +104,20 @@ router.get( '/', ( req, res ) => {
         const searchRegex = new RegExp( 
             '^' +
             searchStrings.reduce(( acc, next ) => {
-                acc += `(?=.*\\b${next}.*\\b)`;
+                acc += `(?=.*${next}.*)`;
                 return acc;
             }, '') +
             '.*$', 'i'
         );
 
+        console.log('strings', searchStrings);
+        console.log('regex', searchRegex);
+
         pipeline.push({
             $match: {
                 $or: [
                     { name: { $regex: searchRegex } },
-                    { description: { $regex: searchRegex } },
+                    { desc: { $regex: searchRegex } },
                     { sku: { $regex: searchRegex } }
                 ]
             }
@@ -184,6 +188,12 @@ router.get( '/', ( req, res ) => {
         });
 
         pipeline.push({
+            $sort: {
+                '_id.COLOR.name': 1 
+            }
+        });
+
+        pipeline.push({
             $group: {
                 _id: {
                     PRODUCT: '$_id.PRODUCT',
@@ -202,7 +212,7 @@ router.get( '/', ( req, res ) => {
                 },
             }
         });
-    
+
         pipeline.push({
             $replaceRoot: {
                 newRoot: { $mergeObjects: ['$_id.PRODUCT', {variants: '$variants', attributeMap: { $arrayToObject: '$attributeMap' }}] }
