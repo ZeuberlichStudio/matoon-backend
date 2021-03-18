@@ -5,7 +5,8 @@ const postSchema = new Schema({
     image: String,
     slug: {
         type: String,
-        unique: true
+        unique: true,
+        default: generateSlug()
     },
     content: String,
     size: {
@@ -19,6 +20,10 @@ const postSchema = new Schema({
         updatedAt: 'meta.updatedAt'
     }
 });
+
+function generateSlug() {
+    return this.name.toLowerCase().replaceAll(' ', '_');
+}
 
 const Post = model( 'Post', postSchema );
 

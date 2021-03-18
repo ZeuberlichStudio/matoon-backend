@@ -1,5 +1,5 @@
 const router = require('express').Router();
-import Post from '../database/models/post';
+import Post from '../models/post';
 
 router.get('/', (req, res) => {
     const fetchPosts = Post.find().sort('meta.createdAt');

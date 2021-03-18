@@ -3,13 +3,18 @@ import {Schema, model} from 'mongoose';
 const colorSchema = new Schema({
     name: {
         type: String,
-        unique: true
+        unique: true,
+        required: true
     },
     slug: {
         type: String,
-        unique: true
+        unique: true,
+        required: true
     },
-    value: String
+    value: {
+        type: String,
+        required: true
+    }
 });
 
 const Color = model('Color', colorSchema);

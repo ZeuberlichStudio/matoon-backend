@@ -1,6 +1,7 @@
 const router = require('express').Router();
 
-import Cat from '../database/models/cat';
+import Cat from '../models/cat';
+import { skladModelCategory, createCat } from '../controllers/category-controller';
 
 router.get('/', (req, res) => {
     Cat.find({})
@@ -80,5 +81,7 @@ router.get('/:slug', (req, res) => {
         .then( data => res.send(data) )
         .catch( err => res.send(err) );
 });
+
+router.post('/moysklad', skladModelCategory, createCat);
 
 module.exports = router;

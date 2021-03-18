@@ -1,8 +1,11 @@
-const router = require('express').Router();
+const productsRouter = require('express').Router();
 
-import Product from '../database/models/product';
+import Product from '../models/product';
+import  _ from 'lodash';
+import { getVariations, getVariationById } from 'controllers/products-controller';
+import mongoose from 'mongoose';
 
-router.get( '/', ( req, res ) => {
+productsRouter.get('/', ( req, res ) => {
     const {
         cat,
         sort: reqSort,
@@ -16,7 +19,8 @@ router.get( '/', ( req, res ) => {
         search,
         limit,
         offset,
-        attrMap = 'true'
+        attrMap = 'true',
+        exc
     } = req.query;
 
     //sorting
@@ -30,24 +34,7 @@ router.get( '/', ( req, res ) => {
     const sex = reqSex && reqSex.split(',');
 
     //match stage
-    let match = {
-        variants: { $elemMatch: 
-            {
-                "images": [
-                  "products/27d.jpg"
-                ],
-                "sku": "098W-RG",
-                "_id": "5fe3c9b3f61d8110c4e9a9ff",
-                "color": "red",
-                "brand": {
-                  "_id": "5fd809eac0e574333c12852d",
-                  "name": "Gucci",
-                  "slug": "gucci"
-                },
-                "stock": "1158"
-            }
-        }
-    };
+    let match = {};
 
     if ( colors ) {
         match['attributes.colors'] = { $in: colors };
@@ -61,20 +48,24 @@ router.get( '/', ( req, res ) => {
     if ( sex ) {
         match['for'] = { $in: sex };
     }
+    if ( exc ) {
+        match['sku'] = { $ne: exc }; 
+    }
 
     if ( minPrice && maxPrice ) {
-        match['price'] = { $gte: parseInt(minPrice), $lte: parseInt(maxPrice) };
+        match['prices.0.amount'] = { $gte: parseInt(minPrice), $lte: parseInt(maxPrice) };
     }
     else if ( minPrice && !maxPrice ) {
-        match['price'] = { $gte: parseInt(minPrice) };
+        match['prices.0.amount'] = { $gte: parseInt(minPrice) };
     }
     else if ( !minPrice && maxPrice ) {
-        match['price'] = { $lte: parseInt(maxPrice) };
+        match['prices.0.amount'] = { $lte: parseInt(maxPrice) };
     }
 
     if ( minStock ) {
-        match['meta.stock'] = { $gte: parseInt(minStock) };
+        match['variations'] = { $elemMatch: { stock: { $gte: parseInt(minStock) } }};
     }
+    
 
     //sort stage
     let sort = null;
@@ -116,22 +107,35 @@ router.get( '/', ( req, res ) => {
         const searchRegex = new RegExp( 
             '^' +
             searchStrings.reduce(( acc, next ) => {
-                acc += `(?=.*\\b${next}.*\\b)`;
+                acc += `(?=.*${next}.*)`;
                 return acc;
             }, '') +
             '.*$', 'i'
         );
 
+        console.log('strings', searchStrings);
+        console.log('regex', searchRegex);
+
         pipeline.push({
             $match: {
                 $or: [
                     { name: { $regex: searchRegex } },
-                    { description: { $regex: searchRegex } },
+                    { desc: { $regex: searchRegex } },
                     { sku: { $regex: searchRegex } }
                 ]
             }
         });
     }
+
+    //joining variations
+    pipeline.push({
+        $lookup: {
+            from: 'variations',
+            localField: '_id',
+            foreignField: 'parent',
+            as: 'variations'
+        }
+    });
 
     //filters
     pipeline.push({
@@ -142,22 +146,22 @@ router.get( '/', ( req, res ) => {
     if ( attrMap === 'true' ) {
         pipeline.push({
             $unwind: {
-                path: '$variants'
+                path: '$variations'
             }
         });
 
         pipeline.push({
             $lookup: {
                 from: 'brands',
-                localField: 'variants.brand',
+                localField: 'variations.brand',
                 foreignField: 'slug',
-                as: 'variants.brand'
+                as: 'variations.brand'
             }
         });
 
         pipeline.push({
             $unwind: { 
-                path: '$variants.brand',
+                path: '$variations.brand',
                 preserveNullAndEmptyArrays: true
             }
         })
@@ -166,16 +170,16 @@ router.get( '/', ( req, res ) => {
             $group: {
                 _id: {
                     PRODUCT: '$$ROOT',
-                    COLOR: '$variants.color' 
+                    COLOR: '$variations.color' 
                 },
-                variants: { $push: '$variants' },
-                attributeMap: { $push: '$variants' },
+                variations: { $push: '$variations' },
+                attributeMap: { $push: '$variations' },
             }
         });
 
         pipeline.push({
             $project: {
-                '_id.PRODUCT.variants': 0,
+                '_id.PRODUCT.variations': 0,
             }
         });
 
@@ -193,7 +197,13 @@ router.get( '/', ( req, res ) => {
         });
 
         pipeline.push({
-            $unwind: { path: '$variants' }
+            $unwind: { path: '$variations' }
+        });
+
+        pipeline.push({
+            $sort: {
+                '_id.COLOR.name': 1 
+            }
         });
 
         pipeline.push({
@@ -201,7 +211,7 @@ router.get( '/', ( req, res ) => {
                 _id: {
                     PRODUCT: '$_id.PRODUCT',
                 },
-                variants: { $push: '$variants' },
+                variations: { $push: '$variations' },
                 attributeMap: {
                     $push: {
                         k: '$_id.COLOR.slug',
@@ -218,7 +228,7 @@ router.get( '/', ( req, res ) => {
 
         pipeline.push({
             $replaceRoot: {
-                newRoot: { $mergeObjects: ['$_id.PRODUCT', {variants: '$variants', attributeMap: {$arrayToObject: '$attributeMap'}}] }
+                newRoot: { $mergeObjects: ['$_id.PRODUCT', {variations: '$variations', attributeMap: { $arrayToObject: '$attributeMap' }}] }
             }
         });
     } else {
@@ -268,11 +278,14 @@ router.get( '/', ( req, res ) => {
             },
         },
         {
-            $unwind: '$count'
+            $unwind: {
+                path: '$count',
+                preserveNullAndEmptyArrays: true
+            },
         },
         {
             $project: {
-                'totalMatches': '$count.value',
+                'totalMatches': { $ifNull: ['$count.value', 0] },
                 'rows': '$rows'
             }
         }
@@ -287,14 +300,13 @@ router.get( '/', ( req, res ) => {
         .catch( err => res.send(err) );
 });
 
-router.get('/slug=:slug', (req, res) => {
-    const { slug } = req.params;
-    const slugs = slug.split(',');
+productsRouter.get('/id=:_id', (req, res) => {
+    const { _id, attrMap } = req.params;
 
     const pipeline = [
         {
             $match: {
-                slug: { $in: slugs }
+                _id: mongoose.Types.ObjectId(_id)
             }
         },
         {
@@ -316,96 +328,109 @@ router.get('/slug=:slug', (req, res) => {
     ];
 
     //adding attribute map 
-    pipeline.push({
-        $unwind: {
-            path: '$variants'
-        }
-    });
+    if ( attrMap === 'true' ) {        
+        pipeline.push({
+            $unwind: {
+                path: '$variations'
+            }
+        });
 
-    pipeline.push({
-        $lookup: {
-            from: 'brands',
-            localField: 'variants.brand',
-            foreignField: 'slug',
-            as: 'variants.brand'
-        }
-    });
+        pipeline.push({
+            $lookup: {
+                from: 'brands',
+                localField: 'variations.brand',
+                foreignField: 'slug',
+                as: 'variations.brand'
+            }
+        });
 
-    pipeline.push({
-        $unwind: { 
-            path: '$variants.brand',
-            preserveNullAndEmptyArrays: true
-        }
-    });
+        pipeline.push({
+            $unwind: { 
+                path: '$variations.brand',
+                preserveNullAndEmptyArrays: true
+            }
+        });
 
-    pipeline.push({
-        $group: {
-            _id: {
-                PRODUCT: '$$ROOT',
-                COLOR: '$variants.color' 
-            },
-            variants: { $push: '$variants' },
-            attributeMap: { $push: '$variants' },
-        }
-    });
+        pipeline.push({
+            $group: {
+                _id: {
+                    PRODUCT: '$$ROOT',
+                    COLOR: '$variations.color' 
+                },
+                variations: { $push: '$variations' },
+                attributeMap: { $push: '$variations' },
+            }
+        });
 
-    pipeline.push({
-        $project: {
-            '_id.PRODUCT.variants': 0,
-        }
-    });
+        pipeline.push({
+            $project: {
+                '_id.PRODUCT.variations': 0,
+            }
+        });
 
-    pipeline.push({
-        $lookup: {
-            from: 'colors',
-            localField: '_id.COLOR',
-            foreignField: 'slug',
-            as: '_id.COLOR'
-        }
-    });
+        pipeline.push({
+            $lookup: {
+                from: 'colors',
+                localField: '_id.COLOR',
+                foreignField: 'slug',
+                as: '_id.COLOR'
+            }
+        });
 
-    pipeline.push({
-        $unwind: { path: '$_id.COLOR' }
-    })
+        pipeline.push({
+            $unwind: { path: '$_id.COLOR' }
+        });
 
-    pipeline.push({
-        $unwind: { path: '$variants' }
-    });
+        pipeline.push({
+            $unwind: { path: '$variations' }
+        });
 
-    pipeline.push({
-        $group: {
-            _id: {
-                PRODUCT: '$_id.PRODUCT',
-            },
-            variants: { $push: '$variants' },
-            attributeMap: {
-                $push: {
-                    k: '$_id.COLOR.slug',
-                    v: {
-                        name: '$_id.COLOR.name',
-                        slug: '$_id.COLOR.slug',
-                        value: '$_id.COLOR.value',
-                        brands: '$attributeMap.brand'
-                    } 
-                }
-            },
-        }
-    });
+        pipeline.push({
+            $group: {
+                _id: {
+                    PRODUCT: '$_id.PRODUCT',
+                },
+                variations: { $push: '$variations' },
+                attributeMap: {
+                    $push: {
+                        k: '$_id.COLOR.slug',
+                        v: {
+                            name: '$_id.COLOR.name',
+                            slug: '$_id.COLOR.slug',
+                            value: '$_id.COLOR.value',
+                            brands: '$attributeMap.brand'
+                        } 
+                    }
+                },
+            }
+        });
 
-    pipeline.push({
-        $replaceRoot: {
-            newRoot: { $mergeObjects: ['$_id.PRODUCT', {variants: '$variants', attributeMap: { $arrayToObject: '$attributeMap' }}] }
-        }
-    });
+        pipeline.push({
+            $replaceRoot: {
+                newRoot: { $mergeObjects: ['$_id.PRODUCT', {variations: '$variations', attributeMap: { $arrayToObject: '$attributeMap' }}] }
+            }
+        });
+    }
 
     const product = Product.aggregate(pipeline);
 
     product
-        .then( data => res.send(data) )
+        .then(data => {
+            const sortedData = [];
+
+            for( const doc of data ) {
+                const index = slugs.indexOf(doc.slug);
+                sortedData[index] = doc;
+            }
+
+            sortedData.reverse();
+
+            res.send(sortedData);
+        })
         .catch( err => res.send(err) );
 });
 
-router.get('/available-filters', (req, res) => {
+productsRouter.get('/available-filters', (req, res) => {
 
     const {
         cat,
@@ -611,4 +636,9 @@ router.get('/available-filters', (req, res) => {
         .catch( err => res.send(err) );
 });
 
-module.exports = router;
+productsRouter.get('/variations', getVariations);
+productsRouter.get('/variations/:_id', getVariationById);
+
+productsRouter.post('/hook-test', (req, res, next) => console.log(JSON.stringify(req.body)));
+
+module.exports = productsRouter;

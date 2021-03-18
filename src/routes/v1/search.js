@@ -1,5 +1,5 @@
 const router = require('express').Router();
-import Product from '../database/models/product';
+import Product from '../models/product';
 
 router.get('/:text', ( req, res ) => {
     const text = req.params.text;

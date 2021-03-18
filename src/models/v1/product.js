@@ -8,16 +8,13 @@ const productSchema = new Schema({
     images: [String],
     categories: [String],
     for: String,
-    variants: [{
-        images: [String],
-        name: String,
-        color: { type: String, ref: 'Color' },
-        brand: { type: String, ref: 'Brand' },
-        stock: Number
+    variations: [{
+        type: Schema.Types.ObjectId,
+        ref: 'Variations'
     }],
     attributes: {
         colors: [{ type: String, ref: 'Color' }],
-        brands: [{ type: String, ref: 'Color' }]
+        brands: [{ type: String, ref: 'Brand' }]
     },
     specs: SchemaTypes.Mixed,
     materials: [String],

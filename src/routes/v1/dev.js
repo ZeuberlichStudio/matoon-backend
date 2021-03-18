@@ -1,5 +1,5 @@
 const devRouter = require('express').Router();
-import Product from '../database/models/product';
+import Product from '../models/product';
 
 devRouter.get('/', ( req, res ) => {
     Product.aggregate([
