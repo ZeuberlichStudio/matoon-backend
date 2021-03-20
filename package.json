@@ -32,6 +32,7 @@
     "mongoose-auto-increment": "^5.0.1",
     "mongoose-sequence": "^5.3.1",
     "node-telegram-bot-api": "^0.51.0",
+    "regenerator-runtime": "^0.13.7",
     "telegram-bot-api": "^2.0.1"
   },
   "repository": "git@github.com:ZeuberlichStudio/matoon-backend-dev.git"
