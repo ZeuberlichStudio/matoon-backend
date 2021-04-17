@@ -91,20 +91,20 @@ const productSchema = new Schema({
         dimensions: {
             w: {
                 type: Number,
-                required: true
+                // required: true
             },
             l: {
                 type: Number,
-                required: true
+                // required: true
             },
             h: {
                 type: Number,
-                required: true
+                // required: true
             }
         },
         weight: {
             type: Number,
-            required: true
+            // required: true
         }
     },
     isPublished: {
