@@ -45,7 +45,7 @@ const orderSchema = new Schema({
         },
         contactBy: {
             type: String,
-            enum: ['phone', 'mail', 'wapp', 'telegram', 'viber'],
+            enum: ['phone', 'mail', 'wapp', 'tg', 'viber'],
             required: true
         }
     },

@@ -1,4 +1,3 @@
-import { Mongoose, SchemaTypes } from 'mongoose';
 import Order from '~/models/v2/order';
 import Product from '~/models/v2/product';
 import Bot from '~/common/tg-bot';

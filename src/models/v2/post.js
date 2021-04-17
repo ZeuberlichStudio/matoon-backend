@@ -31,7 +31,8 @@ const postSchema = new Schema({
 });
 
 function generateSlug() {
-    return this.name.toLowerCase().replaceAll(' ', '_');
+    const re = /\s/g;
+    return this.name.toLowerCase().replace(re, '_');
 }
 
 const Post = model( 'Post', postSchema );
