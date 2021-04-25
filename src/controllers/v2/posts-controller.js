@@ -1,12 +1,13 @@
 import Post from '~/models/v2/post';
 
 module.exports = {
+    //TODO!!! добавить сортировку по нескольким полям
     getList(req, res, next) {
-        let filter = {};
+        let filters = {};
 
-        if ( req.query.page ) filter.page = req.query.page;
-        if ( req.query.type ) filter.type = req.query.type;
-        if ( req.query.cat ) filter.cats = { $in: [req.query.cat] };
+        if ( req.query.page ) filters.page = req.query.page;
+        if ( req.query.type ) filters.type = req.query.type;
+        if ( req.query.cat ) filters.cats = { $in: [req.query.cat] };
 
         //Sorting documents
         const [field, order] = req.query.sort?.split(',') || [];
@@ -25,17 +26,31 @@ module.exports = {
             skip: skip ? parseInt(skip) : 0
         };
 
-        Post.find(filter, null, pagination).sort(sort)
+        Promise.all([
+            Post.find(filters, null, pagination)
+            .sort(sort)
             .populate({
                 path: 'image',
                 model: 'Image'
-            })
-            .sort(sort)
-            .then(result => {
-                res.header('X-Total-Count', result.length);
+            }),
+            Post.count(filters)
+        ])
+            .then(([result, count]) => {
+                res.header('X-Total-Count', count);
                 res.json(result);
             })
             .catch(next);
+
+        // Post.find(filter, null, pagination).sort(sort)
+        //     .populate({
+        //         path: 'image',
+        //         model: 'Image'
+        //     })
+        //     .then(result => {
+        //         res.header('X-Total-Count', result.length);
+        //         res.json(result);
+        //     })
+        //     .catch(next);
     },
 
     getByID(req, res, next) {

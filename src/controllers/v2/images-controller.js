@@ -2,13 +2,6 @@ import Image from '~/models/v2/image';
 
 module.exports = {
     getList(req, res, next) {
-        const filters = {};
-
-        if ( req.query.parent ) {
-            const {parent} = req.query;
-            filters.parent = parent !== 'null' ? parent : null;
-        }
-
         //Sorting documents
         const [field, order] = req.query.sort?.split(',') || [];
 
@@ -26,12 +19,22 @@ module.exports = {
             skip: skip ? parseInt(skip) : 0
         };
 
-        Image.find(filters, null, pagination).sort(sort)
-            .then(result => {
-                res.header('X-Total-Count', result.length);
+        Promise.all([
+            Image.find({}, null, pagination).sort(sort),
+            Image.count({})
+        ])
+            .then(([result, count]) => {
+                res.header('X-Total-Count', count);
                 res.json(result);
             })
             .catch(next);
+
+        // Image.find({}, null, pagination).sort(sort)
+        //     .then(result => {
+        //         res.header('X-Total-Count', result.length);
+        //         res.json(result);
+        //     })
+        //     .catch(next);
     },
 
     getByID(req, res, next) {

@@ -2,6 +2,7 @@ import Product from '~/models/v2/product';
 import { Types } from 'mongoose';
 
 module.exports = {
+    //TODO!!! добавить сортировку по нескольким полям
     getList(req, res, next) {
         //Initial category lookup
         const catLookup = {
@@ -20,6 +21,11 @@ module.exports = {
     
         //Basic filtering
         const filters = {$and: []}
+
+        //Return unpublished products only if user is admin
+        if ( req.user.role !== 'admin' ) {
+            filters.isPublished = true;
+        }
 
         //Exclude documents
         if ( req.query.exc ) {
@@ -189,7 +195,7 @@ module.exports = {
         };
 
         //Connecting all stages
-        const pipeline = [
+        const plainPipeline = [
             { $lookup: catLookup },
             { $unwind: { path: '$cat', preserveNullAndEmptyArrays: true }},
             { $lookup: parentCatLookup },
@@ -204,15 +210,27 @@ module.exports = {
             { $unwind: { path: '$variants.attributes.brand', preserveNullAndEmptyArrays: true }},
             { $group: variantGoup },
             { $unset: unsetVariantGroup },
-            { $replaceWith: replaceVariantGroup },
+            { $replaceWith: replaceVariantGroup }
+        ];
+
+        const paginationPipeline = [
             { $sort: sort },
             { $skip: pagination.skip },
             { $limit: pagination.limit }
-        ];
-        
-        Product.aggregate(pipeline)
-            .then(result => {
-                res.header('X-Total-Count', result.length);
+        ]
+
+        const countPipeline = [
+            { $count: 'total' }
+        ]
+
+        const queries = [];
+
+        queries.push(Product.aggregate([...plainPipeline, ...paginationPipeline]));
+        queries.push(Product.aggregate([...plainPipeline, ...countPipeline]));
+
+        Promise.all(queries)
+            .then(([result, countResult]) => {
+                res.header('X-Total-Count', countResult[0].total);
                 res.json(result);
             })
             .catch(next);
@@ -253,8 +271,12 @@ module.exports = {
 
     update(req, res, next) {
         const { body, params: {_id} } = req;
+        const amounts = body.prices.map(price => price.amount);
 
-        Product.updateOne({_id}, body)
+        body.minPrice = Math.min(...amounts);
+        body.maxPrice = Math.max(...amounts);
+
+        Product.update({_id}, body)
             .then(result => res.json(result))
             .catch(next);
     },

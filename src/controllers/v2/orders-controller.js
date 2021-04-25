@@ -79,19 +79,15 @@ module.exports = {
         return message;
     },
 
+    //sends message to chat via TG Bot
     sendTelegramMessage(order) {
         const options = { parse_mode: 'HTML' }
         const chat = '336709361';
         Bot.sendMessage(chat, module.exports.generateMessage(order), options);
     },
 
+    //TODO добавить сортировку по нескольким полям 
     getList(req, res, next) {
-        let filter = {};
-
-        if ( req.query.page ) filter.page = req.query.page;
-        if ( req.query.type ) filter.type = req.query.type;
-        if ( req.query.cat ) filter.cats = { $in: [req.query.cat] };
-
         //Sorting documents
         const [field, order] = req.query.sort?.split(',') || [];
 
@@ -109,13 +105,23 @@ module.exports = {
             skip: skip ? parseInt(skip) : 0
         };
 
-        Order.find(filter, null, pagination).sort(sort)
-            .sort(sort)
-            .then(result => {
-                res.header('X-Total-Count', result.length);
+        Promise.all([
+            Order.find({}, null, pagination).sort(sort),
+            Order.count({})
+        ])
+            .then(([result, count]) => {
+                res.header('X-Total-Count', count);
                 res.json(result);
             })
             .catch(next);
+
+        // Order.find(filter, null, pagination).sort(sort)
+        //     .sort(sort)
+        //     .then(result => {
+        //         res.header('X-Total-Count', result.length);
+        //         res.json(result);
+        //     })
+        //     .catch(next);
     },
 
     getByID(req, res, next) {

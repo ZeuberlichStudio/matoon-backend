@@ -19,12 +19,22 @@ module.exports = {
             skip: skip ? parseInt(skip) : 0
         };
 
-        Color.find({}, null, pagination).sort(sort)
-            .then(result => {
-                res.header('X-Total-Count', result.length);
+        Promise.all([
+            Color.find({}, null, pagination).sort(sort),
+            Color.count({})
+        ])
+            .then(([result, count]) => {
+                res.header('X-Total-Count', count);
                 res.json(result);
             })
             .catch(next);
+
+        // Color.find({}, null, pagination).sort(sort)
+        //     .then(result => {
+        //         res.header('X-Total-Count', result.length);
+        //         res.json(result);
+        //     })
+        //     .catch(next);
     },
 
     getByID(req, res, next) {

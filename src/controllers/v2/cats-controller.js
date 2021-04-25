@@ -1,6 +1,7 @@
 import Cat from '~/models/v2/cat';
 
 module.exports = {
+    //TODO!!! добавить сортировку по нескольким полям
     getList(req, res, next) {
         const filters = {};
 
@@ -27,12 +28,22 @@ module.exports = {
         };
 
 
-        Cat.find(filters, null, pagination).sort(sort)
-            .then(result => {
-                res.header('X-Total-Count', result.length);
+        Promise.all([
+            Cat.find(filters, null, pagination).sort(sort),
+            Cat.count(filters)
+        ])
+            .then(([result, count]) => {
+                res.header('X-Total-Count', count);
                 res.json(result);
             })
             .catch(next);
+
+        // Cat.find(filters, null, pagination).sort(sort)
+        //     .then(result => {
+        //         res.header('X-Total-Count', result.length);
+        //         res.json(result);
+        //     })
+        //     .catch(next);
     },
 
     getByID(req, res, next) {

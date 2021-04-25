@@ -42,7 +42,9 @@ const productSchema = new Schema({
     slug: {
         type: String,
         unique: true,
-        default: function() { return this.sku; }
+        default: function() { 
+            return this.sku; 
+        }
     },
     desc: String,
     images: {
@@ -76,15 +78,16 @@ const productSchema = new Schema({
         type: String,
         required: true,
         default: function() {
-            const {prices} = this;
-            return prices[prices.length - 1].amount;
+            const amounts = this.prices.map(price => price.amount);
+            return Math.min(...amounts);
         }
     },
     maxPrice: {
         type: String,
         required: true,
         default: function() {
-            return this.prices[0].amount;
+            const amounts = this.prices.map(price => price.amount);
+            return Math.max(...amounts);
         }
     },
     shippingDetails: {
@@ -109,7 +112,7 @@ const productSchema = new Schema({
     },
     isPublished: {
         type: Boolean,
-        default: true
+        default: false
     },
     meta: {
         createdAt: Date,

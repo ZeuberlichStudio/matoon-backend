@@ -3,6 +3,7 @@ import OrdersController from '~/controllers/v2/orders-controller';
 import authorize from '~/middleware/authorize';
 
 router.post('/', OrdersController.create);
+
 router.use(authorize(['admin']));
 router.get('/', OrdersController.getList);
 router.get('/:_id', OrdersController.getByID);

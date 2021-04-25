@@ -19,13 +19,22 @@ module.exports = {
             skip: skip ? parseInt(skip) : 0
         };
 
-
-        Material.find({}, null, pagination).sort(sort)
-            .then(result => {
-                res.header('X-Total-Count', result.length);
+        Promise.all([
+            Material.find({}, null, pagination).sort(sort),
+            Material.count({})
+        ])
+            .then(([result, count]) => {
+                res.header('X-Total-Count', count);
                 res.json(result);
             })
             .catch(next);
+
+        // Material.find({}, null, pagination).sort(sort)
+        //     .then(result => {
+        //         res.header('X-Total-Count', result.length);
+        //         res.json(result);
+        //     })
+        //     .catch(next);
     },
     
     getByID(req, res, next) {

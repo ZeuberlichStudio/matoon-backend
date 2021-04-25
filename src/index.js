@@ -11,11 +11,12 @@ app.use(cors({
     exposedHeaders: ['X-Total-Count']
 }));
 //static
-app.use('/static', express.static(__dirname + '/../public'));
+app.use('/public', express.static('public'));
 //api routes
-app.use('/orders', require('~/routes/v2/orders'));
+// TODO подключить раут заказов перед публикацией
+// app.use('/orders', require('~/routes/v2/orders'));
 app.use('/users', require('~/routes/v2/users'));
-app.use('/images', require('~/routes/v2/images'));
+app.use('/images', require('~/routes/image.route'));
 app.use('/posts', require('~/routes/v2/posts'));
 app.use('/cats', require('~/routes/v2/cats'));
 app.use('/products', require('~/routes/v2/products'));

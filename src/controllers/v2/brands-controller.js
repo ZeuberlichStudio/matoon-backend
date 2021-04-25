@@ -2,12 +2,38 @@ import Brand from '~/models/v2/brand';
 
 module.exports = {
     getList(req, res, next) {
-        Brand.find()
-            .then(result => {
-                res.header('X-Total-Count', result.length);
+        //Sorting documents
+        const [field, order] = req.query.sort?.split(',') || [];
+
+        const sort = (field && parseInt(order)) ? {
+            [field]: parseInt(order)
+        } : {
+            _id: 1
+        };
+        
+        //Pagination
+        const { limit, skip } = req.query;
+
+        const pagination = { 
+            limit: limit ? parseInt(limit) : 0,
+            skip: skip ? parseInt(skip) : 0
+        };
+
+        Promise.all([
+            Brand.find({}, null, pagination).sort(sort),
+            Brand.count()
+        ])
+            .then(([result, count]) => {
+                res.header('X-Total-Count', count);
                 res.json(result);
             })
             .catch(next);
+        // Brand.find()
+        //     .then(result => {
+        //         res.header('X-Total-Count', result.length);
+        //         res.json(result);
+        //     })
+        //     .catch(next);
     },
     
     getByID(req, res, next) {
