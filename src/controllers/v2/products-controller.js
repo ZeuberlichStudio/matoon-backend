@@ -230,7 +230,7 @@ module.exports = {
 
         Promise.all(queries)
             .then(([result, countResult]) => {
-                res.header('X-Total-Count', countResult[0].total);
+                res.header('X-Total-Count', countResult[0]?.total || 0);
                 res.json(result);
             })
             .catch(next);

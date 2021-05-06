@@ -2,7 +2,7 @@ import regeneratorRuntime from "regenerator-runtime";
 import express from 'express';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import connection from './database/connection';
+import './database/connection';
 
 require('dotenv').config();
 const app = express();
@@ -13,8 +13,7 @@ app.use(cors({
 //static
 app.use('/public', express.static('public'));
 //api routes
-// TODO подключить раут заказов перед публикацией
-// app.use('/orders', require('~/routes/v2/orders'));
+app.use('/orders', require('~/routes/v2/orders'));
 app.use('/users', require('~/routes/v2/users'));
 app.use('/images', require('~/routes/image.route'));
 app.use('/posts', require('~/routes/v2/posts'));

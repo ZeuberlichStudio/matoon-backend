@@ -1,6 +1,9 @@
 import Order from '~/models/v2/order';
 import Product from '~/models/v2/product';
 import Bot from '~/common/tg-bot';
+import nodemailer from 'nodemailer';
+
+require('dotenv').config();
 
 module.exports = {
     //Returns text with order info
@@ -79,11 +82,223 @@ module.exports = {
         return message;
     },
 
+    generateReceipt(order) {
+        function separateThousands(number) { return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+
+        const shippingMethods = {
+            pickup: 'Самовывоз',
+            carrier: 'Курьер магазина',
+            dellin: `Деловые Линии`,
+            pek: 'ПЭК',
+            sdek: 'СДЭК',
+            baikal: 'Байкал Сервис',
+            custom: 'Свой способ'
+        }
+
+        const receipt = `
+            <html style="font-family: 'Trebuchet MS';">
+            <body style="color: rgb(19, 11, 69);">
+                <h1
+                    style="
+                        width: 640px;
+                        padding: 24px;
+                        font-size: 24px;
+                        text-align: center;
+                        font-weight: bold;
+                        font-style: italic;
+                    "
+                >
+                    Ваш заказ принят в обработку, <br/>
+                    мы свяжемся с Вами в ближайшее время.
+                    <br/><br/>
+                    Спасибо, что выбрали нас!
+                </h1>
+        
+                <div 
+                    style="
+                        width: 640px;
+                        padding: 24px;
+                        border-radius: 24px;
+                        border: 2px solid rgba(19, 11, 69, .6);
+                        box-shadow: 0px 6px 12px rgba(5, 1, 26, 0.2);
+                    "
+                >
+                    <img 
+                        width="124"
+                        src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/LEGO_logo.svg/768px-LEGO_logo.svg.png"
+                    >
+                    <table
+                        style="
+                            width: 640px;
+                            margin: 32px 0;
+                            border: 2px solid rgba(19, 11, 69, .6);
+                            border-collapse: collapse;
+                        "
+                    >
+                    <tbody>
+                        <tr style="text-align: left; border-bottom: 2px solid rgba(19, 11, 69, .6);">
+                            <th 
+                                style="
+                                    font-size: 18px;
+                                    line-height: 36px;
+                                    padding: 0 16px;
+                                "
+                            >
+                                Позиция
+                            </th>
+                            <th 
+                                style="
+                                    font-size: 18px;
+                                    line-height: 36px;
+                                    padding: 0 16px;
+                                "
+                            >
+                                Количество
+                            </th>
+                            <th 
+                                style="
+                                    font-size: 18px;
+                                    line-height: 36px;
+                                    padding: 0 16px;
+                                "
+                            >
+                                Цена (1 шт.)
+                            </th>
+                            <th 
+                                style="
+                                    font-size: 18px;
+                                    line-height: 36px;
+                                    padding: 0 16px;
+                                "
+                            >
+                                Сумма
+                            </th>
+                        </tr>
+
+                        ${
+                            order.items.acc((acc, {
+                                sku,
+                                attributes: { color, brand },
+                                qty,
+                                price
+                            }) => 
+                                acc +
+                                `<tr
+                                    style="
+                                        font-size: 18px;
+                                        line-height: 36px;
+                                        padding: 0 16px;
+                                    "
+                                >
+                                    <td
+                                        style="
+                                            font-size: 18px;
+                                            line-height: 36px;
+                                            padding: 0 16px;
+                                        "
+                                    >
+                                        ${qty} шт.
+                                    </td>
+                                    <td
+                                        style="
+                                            font-size: 18px;
+                                            line-height: 36px;
+                                            padding: 0 16px;
+                                        "
+                                    >
+                                        <b>${sku} <span style="opacity: .6;">(${color}/${brand})</span></b>
+                                    </td>
+                                    <td
+                                        style="
+                                            font-size: 18px;
+                                            line-height: 36px;
+                                            padding: 0 16px;
+                                        "
+                                    >
+                                        ${price}руб./шт.
+                                    </td>
+                                    <td
+                                        style="
+                                            font-size: 18px;
+                                            line-height: 36px;
+                                            padding: 0 16px;
+                                        "
+                                    >
+                                        ${price * qty}руб.
+                                    </td>
+                                </tr>`, ''
+                            )
+                        }
+                        </tbody>
+                    </table>
+            
+                    <span
+                        style="
+                            padding: 0 16px;
+                            font-size: 18px;
+                            line-height: 36px;
+                        "
+                    >
+                        <b>Общая сумма заказа *:</b> 
+                        <u>${separateThousands(order.items.reduce((acc, { price, qty }) => acc + price * qty, 0))}</u> руб.;</span> 
+                    <br>
+                    <span
+                        style="
+                            padding: 0 16px;
+                            font-size: 18px;
+                            line-height: 36px;
+                        "
+                    >
+                        <b>Предпочитаемый способ доставки:</b> 
+                        <u>${shippingMethods[order.shipping.method]}</u>;
+                    </span>
+                
+                    <p
+                        style="
+                            padding: 0 16px;
+                            font-size: 16px;
+                        "
+                    >
+                        * Сумма заказа без учета стоимости доставки. <br>
+                        Мы свяжемся с Вами, рассчитав стоимость доставки, <br>
+                        учитывая Ваши пожелания.
+                    </p>
+                </div>
+            </body>
+        </html>
+        `
+
+        return receipt;
+    },
+
     //sends message to chat via TG Bot
     sendTelegramMessage(order) {
         const options = { parse_mode: 'HTML' }
         const chat = '336709361';
         Bot.sendMessage(chat, module.exports.generateMessage(order), options);
+    },
+
+    //sends email receipt to customer
+    sendEmailReceipt(order) {
+        const transporter = nodemailer.createTransport({
+            host: "smtp.yandex.ru",
+            port: 465,
+            secure: true,
+            auth: {
+                user: "info@matoon.store",
+                pass: process.env.YANDEX_KEY
+            }
+        });
+
+        const message = {
+            from: 'sender',
+            to: order.customer.mail,
+            subject: 'Ваш заказ принят',
+            html: module.exports.generateReceipt(order)
+        }
+
+        transporter.sendMail(message)
+            .catch(console.error);
     },
 
     //TODO добавить сортировку по нескольким полям 
@@ -135,8 +350,6 @@ module.exports = {
     async create(req, res, next) {
         const {body} = req;
 
-        console.log(body);
-
         const products = await Product.find({ _id: {$in: body.items} })
             .populate({
                 path: 'variants.attributes.color',
@@ -169,6 +382,7 @@ module.exports = {
         Order.create(body)
             .then(result => {
                 module.exports.sendTelegramMessage(result);
+                module.exports.sendEmailReceipt(result);
                 res.json(result.publicId);
             })
             .catch(next);

@@ -47,6 +47,7 @@ const productSchema = new Schema({
         }
     },
     desc: String,
+    shortDesc: String,
     images: {
         type: [SchemaTypes.ObjectId],
         ref: 'Image'

@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node ./dist/index",
-    "local": "nodemon -x babel-node ./src/index.js",
-    "build": "npx babel ./src --out-dir ./dist"
+    "local": "nodemon -x babel-node ./src/index.js --NODE_ENV=dev",
+    "build": "npx babel ./src --out-dir ./dist --NODE_ENV=production"
   },
   "keywords": [],
   "author": "Yaroslav <goooglemaaan@gmail.com>",
@@ -32,6 +32,7 @@
     "mongoose-sequence": "^5.3.1",
     "multer": "^1.4.2",
     "node-telegram-bot-api": "^0.51.0",
+    "nodemailer": "^6.6.0",
     "regenerator-runtime": "^0.13.7",
     "telegram-bot-api": "^2.0.1"
   },
