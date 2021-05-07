@@ -2,7 +2,7 @@ const {
     getImageRecord,
     getImageRecordsList,
     createImageRecord,
-    deleteImage,
+    // deleteImage,
     deleteImageRecord,
     checkIfImageRecordExists,
 } = require('~/services/image.service');
@@ -55,15 +55,15 @@ module.exports = {
         }
     },
 
-    async deleteImage(req, res, next) {
-        try {
-            const {_id} = req.params;
-            const {path} = await getImageRecord(_id,);
-            const result = await deleteImage(path,() => deleteImageRecord(_id));
+    // async deleteImage(req, res, next) {
+    //     try {
+    //         const {_id} = req.params;
+    //         const {path} = await getImageRecord(_id,);
+    //         const result = await deleteImage(path,() => deleteImageRecord(_id));
 
-            res.send(result);
-        } catch (err) {
-            next(err);
-        }
-    },
+    //         res.send(result);
+    //     } catch (err) {
+    //         next(err);
+    //     }
+    // },
 }

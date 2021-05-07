@@ -5,12 +5,12 @@ const {
     uploadImages,
     createImageRecords,
     deleteImage,
-    deleteImageRecord
+    // deleteImageRecord
 } = require('~/controllers/image.controller');
 
 router.get('/:_id', getImageRecord);
 router.get('/', getImageRecordsList);
 router.post('/', uploadImages, createImageRecords);
-router.delete('/:_id', deleteImage);
+// router.delete('/:_id', deleteImage);
 
 module.exports = router;

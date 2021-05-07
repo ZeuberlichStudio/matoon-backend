@@ -1,5 +1,5 @@
 const Image = require('~/models/Image.model');
-const fsPromises = require('fs').promises;
+// const fsPromises = require('fs').promises;
 
 module.exports = {
     getImageRecord(_id) {
@@ -36,9 +36,9 @@ module.exports = {
             .catch(err => { throw err; /* new Error('error checking image record presence') */ });
     },
 
-    deleteImage(path, onsuccess) {
-        return fsPromises.unlink(path)
-            .then(() => onsuccess())
-            .catch(err => { throw err; });
-    }
+    // deleteImage(path, onsuccess) {
+    //     return fsPromises.unlink(path)
+    //         .then(() => onsuccess())
+    //         .catch(err => { throw err; });
+    // }
 }
