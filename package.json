@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node ./dist/index",
-    "local": "nodemon -x babel-node ./src/index.js --NODE_ENV=dev",
-    "build": "npx babel ./src --out-dir ./dist --NODE_ENV=production"
+    "local": "nodemon -x babel-node ./src/index.js",
+    "build": "npx babel ./src --out-dir ./dist"
   },
   "keywords": [],
   "author": "Yaroslav <goooglemaaan@gmail.com>",
