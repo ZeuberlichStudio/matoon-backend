@@ -285,13 +285,13 @@ module.exports = {
             port: 465,
             secure: true,
             auth: {
-                user: "info@matoon.store",
+                user: process.env.EMAIL_SENDER,
                 pass: process.env.YANDEX_KEY
             }
         });
 
         const message = {
-            from: 'sender',
+            from: process.env.EMAIL_SENDER,
             to: order.customer.mail,
             subject: 'Ваш заказ принят',
             html: module.exports.generateReceipt(order)
