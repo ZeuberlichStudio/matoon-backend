@@ -78,7 +78,6 @@ module.exports = {
         }
 
         message += `\n\n<b>Полная стоимость</b>: ${separateThousands(total)}руб.`;
-
         return message;
     },
 
@@ -275,7 +274,8 @@ module.exports = {
     sendTelegramMessage(order) {
         const options = { parse_mode: 'HTML' }
         const chat = '336709361';
-        Bot.sendMessage(chat, module.exports.generateMessage(order), options);
+        Bot.sendMessage(chat, module.exports.generateMessage(order), options)
+            .catch(console.error);
     },
 
     //sends email receipt to customer
