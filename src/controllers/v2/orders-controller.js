@@ -176,7 +176,7 @@ module.exports = {
                         </tr>
 
                         ${
-                            order.items.acc((acc, {
+                            order.items.reduce((acc, {
                                 sku,
                                 attributes: { color, brand },
                                 qty,
