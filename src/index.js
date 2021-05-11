@@ -8,7 +8,7 @@ require('dotenv').config();
 const app = express();
 app.use(bodyParser.json());
 app.use(cors({
-    origin: 'https://matoon.store',
+    origin: ['https://matoon.store', 'https://admin.matoon.store'],
     exposedHeaders: ['X-Total-Count']
 }));
 //static

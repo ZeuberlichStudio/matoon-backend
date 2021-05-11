@@ -39,7 +39,7 @@ module.exports = {
 
         const paymentMethods = {
             cash: 'Наличными',
-            tranfer: 'Перевод',
+            transfer: 'Перевод',
             bill: `Выставление счёта`
         }
 
