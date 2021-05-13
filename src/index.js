@@ -25,4 +25,5 @@ app.use('/brands', require('~/routes/v2/brands'));
 app.use('/materials', require('~/routes/v2/materials'));
 
 const port = process.env.PORT || 3001;
-const server = app.listen(port, () => console.log(`app is running on port ${server.address().port}`));
+const mode = process.env.NODE_ENV || 'production';
+const server = app.listen(port, () => console.log(`app is running on port ${server.address().port} in ${mode} mode`));

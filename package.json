@@ -5,8 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node ./dist/index",
-    "local": "npx cross-env NODE_ENV=development; npx nodemon -x babel-node ./src/index.js",
-    "build": "npx cross-env NODE_ENV=production; npx babel ./src --out-dir ./dist"
+    "local": "npx cross-env NODE_ENV=development npx nodemon -x babel-node ./src/index.js",
+    "build": "npx cross-env NODE_ENV=production npx babel ./src --out-dir ./dist"
   },
   "keywords": [],
   "author": "Yaroslav <goooglemaaan@gmail.com>",
