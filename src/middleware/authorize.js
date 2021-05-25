@@ -1,6 +1,6 @@
-import verifyToken from './verify-token';
+const verifyToken = require('./verify-token');
 
-export default function authorize(roles = []) {
+module.exports = function authorize(roles = []) {
     return [
         verifyToken,
         (req, res, next) => {

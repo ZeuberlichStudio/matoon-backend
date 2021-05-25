@@ -1,7 +1,7 @@
-import jwt from 'jsonwebtoken';
+const jwt = require('jsonwebtoken');
 require('dotenv').config;
 
-export default function verifyToken(req, res, next) {
+module.exports = function verifyToken(req, res, next) {
     const token = req.headers.authorization;
 
     // if ( !token ) return res.status(401).send('Access denied.');

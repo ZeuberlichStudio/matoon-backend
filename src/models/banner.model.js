@@ -1,4 +1,4 @@
-import { Schema, model, SchemaType } from 'mongoose';
+const { Schema, model, SchemaType } = require('mongoose');
 
 const BannerSchema = new Schema({
     title: String,

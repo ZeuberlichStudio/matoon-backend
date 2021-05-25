@@ -1,7 +1,11 @@
-import TelegramBot from 'node-telegram-bot-api';
+const TelegramBot = require('node-telegram-bot-api');
 
-const token = '1438088320:AAEV-lDy1y_pHHYBMMk75YAunrr7Rx2wu8o';
+const mode = process.env.NODE_ENV || 'production';
 
-const bot = new TelegramBot(token, {polling: true});
+require('dotenv').config({ 
+    path: require('path').resolve(__dirname, '../..', mode == 'production' ? '.env' : '.env.dev')
+});
+
+const bot = new TelegramBot(process.env.TG_TOKEN, {polling: true});
 
 module.exports = bot;
