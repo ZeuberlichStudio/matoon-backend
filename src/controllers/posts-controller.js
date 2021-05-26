@@ -90,6 +90,8 @@ module.exports = {
 
     update(req, res, next) {
         const {body, params: {_id}} = req;
+
+        body.slug = body.name.toLowerCase().replace(/\s/g, '_');
         
         Post.updateOne({_id}, body)
             .then(result => res.json(result))

@@ -33,9 +33,9 @@ module.exports = {
         }
     },
 
-    async getRecord(id) {
+    async getRecord(id, params) {
         try {
-            const result = await Image.findById(id);
+            const result = id ? await Image.findById(id) : await Image.findOne(params);
 
             return { success: true, result };
         } catch (error) {
@@ -44,9 +44,9 @@ module.exports = {
     },
 
     //TODO добавить агрегацию
-    async getRecords() {
+    async getRecords(filters) {
         try {
-            const result = await Image.find();
+            const result = await Image.find(filters);
 
             return { success: true, result };
         } catch (error) {

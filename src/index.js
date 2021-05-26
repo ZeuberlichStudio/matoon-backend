@@ -8,8 +8,6 @@ const mongooseOptions = {
     useUnifiedTopology: true
 };
 
-console.log(process.env.DB_URI)
-
 mongoose.connect(process.env.DB_URI, mongooseOptions)
     .then(() => {
         console.log('Database connection established.');

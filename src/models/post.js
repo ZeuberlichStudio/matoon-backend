@@ -1,7 +1,11 @@
 const { Schema, model } = require('mongoose');
 
 const postSchema = new Schema({
-    name: String,
+    name:  {
+        type: String,
+        unique: true,
+        required: true
+    },
     image: Schema.Types.ObjectId,
     slug: {
         type: String,
@@ -32,8 +36,7 @@ const postSchema = new Schema({
 });
 
 function generateSlug() {
-    const re = /\s/g;
-    return this.name.toLowerCase().replace(re, '_');
+    return this.name.toLowerCase().replace(/\s/g, '_');
 }
 
 const Post = model( 'Post', postSchema );

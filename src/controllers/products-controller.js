@@ -285,7 +285,7 @@ module.exports = {
 
         body.minPrice = Math.min(...amounts);
         body.maxPrice = Math.max(...amounts);
-        body.slug = body.sku;
+        body.slug = body.sku.toLowerCase().replace(/\s/g, '_');
 
         Product.update({_id}, body)
             .then(result => res.json(result))

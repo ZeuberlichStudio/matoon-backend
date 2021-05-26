@@ -124,7 +124,7 @@ module.exports = {
                 >
                     <img 
                         width="124"
-                        src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/LEGO_logo.svg/768px-LEGO_logo.svg.png"
+                        src="matoon.store/images/logo.svg"
                     >
                     <table
                         style="

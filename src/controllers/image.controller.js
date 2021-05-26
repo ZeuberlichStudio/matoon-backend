@@ -14,7 +14,11 @@ module.exports = {
 
     async getImageRecordsList(req, res, next) {
         try {
-            const { result } = await ImageService.getRecords();
+            const filters = {};
+            
+            if ( req.query.name ) filters.name = { $in: req.query.name.split(',') };
+
+            const { result } = await ImageService.getRecords(filters);
 
             res.send(result);
         } catch (err) {
@@ -29,6 +33,10 @@ module.exports = {
             for ( const { originalname, buffer } of req.files ) {
                 const [name] = originalname.split('.');  
                 const pathname = name => `public/images/${name}`;
+                const imageCheck = await ImageService.getRecord(null, { path: pathname(`${name}.jpeg`) });
+
+                if ( imageCheck.result ) throw new Error(`Файл с названием ${name}.jpeg уже существует.`);
+
                 const sizeTiny = { width: 128 },
                       sizeSmall = { width: 256 },
                       sizeMedium = { width: 512 },
@@ -71,7 +79,7 @@ module.exports = {
 
             res.send(records);
         } catch (error) {
-            res.status(500).send(error);
+            res.status(500).send(error.message);
         }
     },
 

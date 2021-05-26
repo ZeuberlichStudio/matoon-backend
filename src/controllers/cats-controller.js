@@ -1,4 +1,5 @@
 const Cat = require('../models/cat');
+const { Types } = require('mongoose');
 
 module.exports = {
     //TODO!!! добавить сортировку по нескольким полям
@@ -8,6 +9,11 @@ module.exports = {
         if ( req.query.parent ) {
             const {parent} = req.query;
             filters.parent = parent !== 'null' ? parent : null;
+        }
+
+        //Exclude documents
+        if ( req.query.exc ) {
+            filters._id = { $ne: Types.ObjectId(req.query.exc) }
         }
 
         //Sorting documents
@@ -80,6 +86,8 @@ module.exports = {
 
     update(req, res, next) {
         const {body, params: {_id}} = req;
+
+        body.slug = body.name.toLowerCase().replace(/\s/g, '_');
         
         Cat.updateOne({_id}, body)
             .then(result => res.json(result))

@@ -7,8 +7,9 @@ class ExpressLoader {
     constructor() {
         const mode = process.env.NODE_ENV || 'production';
         const app = express();
+
         const corsOptions = {
-            origin: mode == 'production' ? '*' : ['https://matoon.store', 'https://admin.matoon.store'],
+            origin: mode == 'production' ? ['https://matoon.store', 'https://admin.matoon.store'] : '*',
             exposedHeaders: ['X-Total-Count']
         };
 

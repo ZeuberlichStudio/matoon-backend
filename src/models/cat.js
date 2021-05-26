@@ -22,8 +22,7 @@ const catSchema = new Schema({
 });
 
 function generateSlug() {
-    const re = /\s/g;
-    return this.name.toLowerCase().replace(re, '_');
+    return this.name.toLowerCase().replace(/\s/g, '_');
 }
 
 module.exports = model('Cats', catSchema);

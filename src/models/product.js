@@ -43,7 +43,7 @@ const productSchema = new Schema({
         type: String,
         unique: true,
         default: function() { 
-            return this.sku; 
+            return this.sku.toLowerCase().replace(/\s/g, '_'); 
         }
     },
     desc: String,
