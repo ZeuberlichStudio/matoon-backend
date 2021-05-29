@@ -64,6 +64,7 @@ module.exports = {
                 })
                 .toBuffer();
 
+            await fsPromises.mkdir(pathname, { recursive: true });
             await fsPromises.writeFile(pathname, processedBuffer, { flags: options.rewrite ? '' : 'wx' });
 
             return { success: true, result: pathname };
