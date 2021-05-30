@@ -30,8 +30,8 @@ module.exports = {
         try {
             let records = [];
 
-            for ( const { originalname, buffer } of req.files ) {
-                const [name] = originalname.split('.');  
+            for ( const file of req.files ) {
+                const [name] = file.originalname.split('.');  
                 const pathname = name => `public/images/${name}`;
                 const imageCheck = await ImageService.getRecord(null, { path: pathname(`${name}.jpeg`) });
 
@@ -43,12 +43,15 @@ module.exports = {
                       sizeLarge = { width: 1024 },
                       sizeOriginal = { width: 1920 };
 
+                const originalPathname = await ImageService.saveImage(file.buffer, pathname(`${name}.jpeg`), { size: sizeOriginal });
+
+                delete file['buffer'];
+
                 await Promise.all([
-                    ImageService.saveImage(buffer, pathname(`${name}.jpeg`), { size: sizeOriginal }),
-                    ImageService.saveImage(buffer, pathname(`${name}_tiny.jpeg`), { size: sizeTiny }),
-                    ImageService.saveImage(buffer, pathname(`${name}_small.jpeg`), { size: sizeSmall }),
-                    ImageService.saveImage(buffer, pathname(`${name}_medium.jpeg`), { size: sizeMedium }),
-                    ImageService.saveImage(buffer, pathname(`${name}_large.jpeg`), { size: sizeLarge }),
+                    ImageService.saveImage(originalPathname, pathname(`${name}_tiny.jpeg`), { size: sizeTiny }),
+                    ImageService.saveImage(originalPathname, pathname(`${name}_small.jpeg`), { size: sizeSmall }),
+                    ImageService.saveImage(originalPathname, pathname(`${name}_medium.jpeg`), { size: sizeMedium }),
+                    ImageService.saveImage(originalPathname, pathname(`${name}_large.jpeg`), { size: sizeLarge }),
                 ]);
 
                 const result = await ImageService.createRecord({
@@ -79,8 +82,8 @@ module.exports = {
 
             res.send(records);
 
-            const memoryUsed = process.memoryUsage().heapUsed / 1024 / 1024;
-            console.log(`Approx ${Math.round(memoryUsed * 100) / 100}MB`);
+            // const memoryUsed = process.memoryUsage().heapUsed / 1024 / 1024;
+            // console.log(`Approx ${Math.round(memoryUsed * 100) / 100}MB`);
         } catch (error) {
             res.status(500).send(error.message);
         }
