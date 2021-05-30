@@ -26,5 +26,6 @@
     "regenerator-runtime": "^0.13.7",
     "sharp": "^0.28.2"
   },
-  "repository": "git@github.com:ZeuberlichStudio/matoon-backend-dev.git"
+  "repository": "git@github.com:ZeuberlichStudio/matoon-backend-dev.git",
+  "devDependencies": {}
 }

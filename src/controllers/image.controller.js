@@ -78,6 +78,9 @@ module.exports = {
             }
 
             res.send(records);
+
+            const memoryUsed = process.memoryUsage().heapUsed / 1024 / 1024;
+            console.log(`Approx ${Math.round(memoryUsed * 100) / 100}MB`);
         } catch (error) {
             res.status(500).send(error.message);
         }
