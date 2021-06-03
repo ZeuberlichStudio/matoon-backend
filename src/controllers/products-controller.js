@@ -1,5 +1,6 @@
 const Product = require('../models/product');
 const { Types } = require('mongoose');
+const slugify = require('../helpers/slugify');
 
 module.exports = {
     //TODO!!! добавить сортировку по нескольким полям
@@ -285,8 +286,8 @@ module.exports = {
 
         body.minPrice = Math.min(...amounts);
         body.maxPrice = Math.max(...amounts);
-        body.slug = body.sku.toLowerCase().replace(/\s/g, '_');
-
+        body.slug = slugify(body.sku);
+        
         Product.update({_id}, body)
             .then(result => res.json(result))
             .catch(next);

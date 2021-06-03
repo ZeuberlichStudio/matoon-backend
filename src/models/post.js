@@ -1,4 +1,5 @@
 const { Schema, model } = require('mongoose');
+const slugify = require('../helpers/slugify');
 
 const postSchema = new Schema({
     name:  {
@@ -11,7 +12,9 @@ const postSchema = new Schema({
         type: String,
         unique: true,
         required: true,
-        default: generateSlug
+        default() {
+            return slugify(this.name);
+        }
     },
     content: String,
     shortDesc: String,
@@ -34,10 +37,6 @@ const postSchema = new Schema({
         updatedAt: 'meta.updatedAt'
     }
 });
-
-function generateSlug() {
-    return this.name.toLowerCase().replace(/\s/g, '_');
-}
 
 const Post = model( 'Post', postSchema );
 

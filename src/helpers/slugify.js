@@ -1,0 +1,1 @@
+module.exports = string => string.match(/([0-9A-zА-яё]+)/ig).join('_').toLowerCase();

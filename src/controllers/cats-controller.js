@@ -1,5 +1,6 @@
 const Cat = require('../models/cat');
 const { Types } = require('mongoose');
+const slugify = require('../helpers/slugify');
 
 module.exports = {
     //TODO!!! добавить сортировку по нескольким полям
@@ -87,7 +88,7 @@ module.exports = {
     update(req, res, next) {
         const {body, params: {_id}} = req;
 
-        body.slug = body.name.toLowerCase().replace(/\s/g, '_');
+        body.slug = slugify(body.name);
         
         Cat.updateOne({_id}, body)
             .then(result => res.json(result))

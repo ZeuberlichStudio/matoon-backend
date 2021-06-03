@@ -1,4 +1,5 @@
 const { Schema, model, SchemaTypes } = require('mongoose');
+const slugify = require('../helpers/slugify');
 
 const priceSchema = new Schema({
     minQty: Number,
@@ -42,8 +43,8 @@ const productSchema = new Schema({
     slug: {
         type: String,
         unique: true,
-        default: function() { 
-            return this.sku.toLowerCase().replace(/\s/g, '_'); 
+        default() {
+            return slugify(this.name);
         }
     },
     desc: String,

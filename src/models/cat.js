@@ -1,4 +1,5 @@
 const { Schema, model, SchemaTypes } = require('mongoose');
+const slugify = require('../helpers/slugify');
 
 const catSchema = new Schema({
     name: {
@@ -13,16 +14,14 @@ const catSchema = new Schema({
     slug: {
         type: String,
         unique: true,
-        default: generateSlug
+        default() {
+            return slugify(this.name);
+        }
     }
 },{
     toJSON: {
         virtuals: true
     }
 });
-
-function generateSlug() {
-    return this.name.toLowerCase().replace(/\s/g, '_');
-}
 
 module.exports = model('Cats', catSchema);
